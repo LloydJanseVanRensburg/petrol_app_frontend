@@ -1,6 +1,6 @@
 import {StyleSheet, Pressable} from 'react-native';
 import React, {useContext} from 'react';
-import {Typography, Paper, Button} from '../../channels-components/components';
+import {Typography, Paper, Button} from 'channels-components/components';
 import {EntriesContext} from '../../context/entries/EntriesProvider';
 
 const EntryCard = ({id, data}) => {

@@ -1,7 +1,7 @@
 import {StyleSheet, View} from 'react-native';
 import React, {useRef, useState} from 'react';
 import {RNCamera} from 'react-native-camera';
-import {Button} from '../channels-components/components';
+import {Button} from 'channels-components/components';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const TakePictureScreen = ({navigation}) => {

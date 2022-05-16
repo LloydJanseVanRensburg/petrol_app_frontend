@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useMemo, useState, useContext} from 'react';
-import {Typography} from '../channels-components/components';
+import {Typography} from 'channels-components/components';
 import MenuCard from '../components/MenuCard';
 import {useThemeProvider} from '../channels-components/apis';
 import qs from 'qs';

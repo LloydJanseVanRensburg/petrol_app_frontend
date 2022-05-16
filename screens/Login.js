@@ -1,10 +1,6 @@
 import {StyleSheet, View} from 'react-native';
 import React, {useState} from 'react';
-import {
-  Button,
-  SecureInput,
-  Typography,
-} from '../channels-components/components';
+import {Button, SecureInput, Typography} from 'channels-components/components';
 
 const Login = ({navigation}) => {
   const [pin, setPin] = useState('');
@@ -29,7 +25,7 @@ const Login = ({navigation}) => {
       </View>
 
       <View style={styles.spacing}>
-        <SecureInput digits={5} secretText={pin} setSecretText={setPin} />
+        <SecureInput count={5} value={pin} setValue={setPin} />
       </View>
 
       <View style={styles.spacing}>

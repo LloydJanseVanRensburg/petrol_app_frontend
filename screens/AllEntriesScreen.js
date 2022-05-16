@@ -1,6 +1,6 @@
 import React, {useContext, useEffect} from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
-import {Typography} from '../channels-components/components';
+import {Typography} from 'channels-components/components';
 import EntryCard from '../components/EntryCard';
 import LoadingScreen from '../components/LoadingScreen';
 import {EntriesContext} from '../context/entries/EntriesProvider';

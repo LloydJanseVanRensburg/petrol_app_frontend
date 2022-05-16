@@ -4,7 +4,7 @@ import Login from './screens/Login';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import AddEntryScreen from './screens/AddEntryScreen';
-import {ThemeProvider, createTheme} from './channels-components/apis';
+import {ThemeProvider, createTheme} from 'channels-components/apis';
 import AllEntriesScreen from './screens/AllEntriesScreen';
 import EntriesProvider from './context/entries/EntriesProvider';
 import TakePictureScreen from './screens/TakePictureScreen';

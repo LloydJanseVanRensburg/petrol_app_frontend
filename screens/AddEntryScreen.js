@@ -1,6 +1,6 @@
 import {ScrollView, StyleSheet, View} from 'react-native';
 import React, {useState, useRef, useContext, useEffect} from 'react';
-import {Button, Input, Typography} from '../channels-components/components';
+import {Button, Input, Typography} from 'channels-components/components';
 import {API_URL} from '../config/config';
 import {EntriesContext} from '../context/entries/EntriesProvider';
 

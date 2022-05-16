@@ -1,6 +1,6 @@
 import {StyleSheet, Pressable, View} from 'react-native';
 import React from 'react';
-import {Paper, Typography} from '../../channels-components/components';
+import {Paper, Typography} from 'channels-components/components';
 
 const MenuCard = ({data}) => {
   return (
