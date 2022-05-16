@@ -1,20 +1,56 @@
-import {StyleSheet, View} from 'react-native';
-import React, {useState} from 'react';
-import {Button, SecureInput, Typography} from 'channels-components/components';
+import {Alert, StyleSheet, View} from 'react-native';
+import React from 'react';
+import {useMutation} from 'react-query';
+import {Button, Input, Typography} from 'channels-components/components';
+import {useFormik} from 'formik';
+import * as Yup from 'yup';
+import axios from 'axios';
+import {API_URL} from '../config/config';
 
 const Login = ({navigation}) => {
-  const [pin, setPin] = useState('');
-  const [loading, setLoading] = useState(false);
+  const formik = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validationSchema: Yup.object({
+      email: Yup.string()
+        .email('Please enter valid email')
+        .required('Required'),
+      password: Yup.string()
+        .min(6, 'Min 6 characters')
+        .max(20, 'Max 20 characters')
+        .required('Required'),
+    }),
+    onSubmit: onLogin,
+  });
 
-  const handleLogin = () => {
-    // Validate Pin
-    // Make XHR request to validate pin
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigation.reset({index: 0, routes: [{name: 'HomeScreen'}]});
-    }, 500);
-  };
+  const mutation = useMutation(handleLogin);
+
+  function handleLogin(userInfo) {
+    return axios.post(`${API_URL}/auth/local`, userInfo);
+  }
+
+  function onLogin(values) {
+    const userInfo = {
+      identifier: values.email,
+      password: values.password,
+    };
+
+    console.log(userInfo);
+
+    mutation.mutate(userInfo, {
+      onSettled: () => {
+        formik.setSubmitting(false);
+      },
+      onError: (error, _variables, _context) => {
+        console.log(error);
+      },
+      onSuccess: () => {
+        navigation.reset({index: 0, routes: [{name: 'HomeScreen'}]});
+      },
+    });
+  }
 
   return (
     <View style={styles.root}>
@@ -25,16 +61,45 @@ const Login = ({navigation}) => {
       </View>
 
       <View style={styles.spacing}>
-        <SecureInput count={5} value={pin} setValue={setPin} />
+        <Typography variant="body1">Email</Typography>
+
+        <Input
+          value={formik.values.email}
+          onChangeText={formik.handleChange('email')}
+          onBlur={formik.handleBlur('email')}
+        />
+
+        {formik.touched.email && formik.errors.email && (
+          <Typography variant="body2">{formik.errors.email}</Typography>
+        )}
+      </View>
+
+      <View style={styles.spacing}>
+        <Typography variant="body1">Password</Typography>
+
+        <Input
+          value={formik.values.password}
+          onChangeText={formik.handleChange('password')}
+          onBlur={formik.handleBlur('password')}
+          secureTextEntry={true}
+        />
+
+        {formik.touched.password && formik.errors.password && (
+          <Typography variant="body2">{formik.errors.password}</Typography>
+        )}
       </View>
 
       <View style={styles.spacing}>
         <Button
           title="Sign In"
           style={styles.button}
-          disabled={loading || pin.length !== 5}
-          onPress={handleLogin}
-          loading={loading}
+          disabled={
+            !formik.isValid ||
+            formik.isSubmitting ||
+            (!formik.dirty && formik.isValid)
+          }
+          onPress={formik.handleSubmit}
+          loading={formik.isSubmitting}
         />
       </View>
     </View>
