@@ -1,16 +1,21 @@
-import React, {useContext, useEffect} from 'react';
+import React from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
 import {Typography} from 'channels-components/components';
 import EntryCard from '../components/EntryCard';
 import LoadingScreen from '../components/LoadingScreen';
-import {EntriesContext} from '../context/entries/EntriesProvider';
+import {useQuery} from 'react-query';
+import axios from 'axios';
+import {API_URL} from '../config/config';
 
 const AllEntriesScreen = () => {
-  const {loadAllEntries, error, loading, entries} = useContext(EntriesContext);
-
-  useEffect(() => {
-    loadAllEntries();
-  }, [loadAllEntries]);
+  const {
+    data: {
+      data: {data},
+    },
+    isLoading,
+    isError,
+    error,
+  } = useQuery('all-entries', () => axios.get(`${API_URL}/entries`));
 
   const handleRenderListItem = itemData => {
     return <EntryCard id={itemData.item.id} data={itemData.item.attributes} />;
@@ -18,14 +23,14 @@ const AllEntriesScreen = () => {
 
   return (
     <>
-      {error && <Typography>{error}</Typography>}
+      {isError && <Typography>{error}</Typography>}
 
-      {loading ? (
+      {isLoading ? (
         <LoadingScreen />
       ) : (
         <View style={styles.screenOuter}>
           <FlatList
-            data={entries}
+            data={data}
             keyExtractor={(item, index) => item.id}
             renderItem={handleRenderListItem}
             style={styles.screenInner}

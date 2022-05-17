@@ -4,24 +4,22 @@ import {
   Dimensions,
   FlatList,
   ActivityIndicator,
+  ActivityIndicatorComponent,
 } from 'react-native';
-import React, {useEffect, useMemo, useState, useContext} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Typography} from 'channels-components/components';
 import MenuCard from '../components/MenuCard';
 import {useThemeProvider} from '../channels-components/apis';
 import qs from 'qs';
 import {API_URL} from '../config/config';
-import {EntriesContext} from '../context/entries/EntriesProvider';
+import {useQuery} from 'react-query';
+import axios from 'axios';
+
+const fetchAllEntries = () => {
+  return axios.get(`${API_URL}/entries`);
+};
 
 const HomeScreen = ({navigation}) => {
-  const {entries} = useContext(EntriesContext);
-
-  const [total, setTotal] = useState(0);
-  const [liters, setLiters] = useState(0);
-  const [loading, setLoading] = useState(false);
-
-  const theme = useThemeProvider();
-
   const MENU_ITEMS = [
     {
       id: 'm1',
@@ -37,64 +35,35 @@ const HomeScreen = ({navigation}) => {
         navigation.navigate('AllEntriesScreen');
       },
     },
-    {
-      id: 'm3',
-      title: 'Logout',
-      cb: () => {
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'LoginScreen'}],
-        });
-      },
-    },
   ];
+
+  const [totalCost, setTotalCost] = useState(0);
+  const [kmPerLiter, setKmPerLiter] = useState(0);
+
+  const theme = useThemeProvider();
 
   const handleRenderMenuItem = itemData => {
     return <MenuCard data={itemData.item} />;
   };
 
-  useEffect(() => {
-    const query = qs.stringify({
-      fields: ['amount', 'liters', 'kilos_per_liter'],
-    });
+  const {isLoading} = useQuery('all-entries', fetchAllEntries, {
+    onSuccess: res => {
+      const total = res.data.data.reduce(
+        (acc, cur) => cur.attributes.amount + acc,
+        0,
+      );
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API_URL}/entries?${query}`);
-        const data = await res.json();
+      const kmPerLiters =
+        res.data.data.reduce(
+          (acc, cur) => cur.attributes.kilos_per_liter + acc,
+          0,
+        ) / res.data.data.length;
 
-        if (!res.ok) {
-          console.log('Something went wrong');
-          setLoading(false);
-          return;
-        }
-
-        if (data.data.length > 0) {
-          const totalAmount = data.data.reduce(
-            (acc, entry) => entry.attributes.amount + acc,
-            0,
-          );
-
-          const litersAmount = data.data.reduce(
-            (acc, entry) => entry.attributes.kilos_per_liter + acc,
-            0,
-          );
-          const kilos_per_liter = litersAmount / data.data.length;
-
-          setTotal(totalAmount);
-          setLiters(Math.ceil(kilos_per_liter));
-        }
-
-        setLoading(false);
-      } catch (err) {
-        setLoading(true);
-        console.log(err);
-      }
-    };
-
-    fetchData();
-  }, [entries]);
+      setTotalCost(total);
+      setKmPerLiter(kmPerLiters);
+    },
+    refetchOnWindowFocus: true,
+  });
 
   const styles = useMemo(() => {
     const windowWidth = Dimensions.get('window').height;
@@ -106,13 +75,10 @@ const HomeScreen = ({navigation}) => {
       headerOuter: {
         width: '100%',
         height: windowWidth * 0.35,
-        paddingHorizontal: 16,
         backgroundColor: theme.colors.primary,
         borderBottomRightRadius: 30,
         borderBottomLeftRadius: 30,
-      },
-      headerInner: {
-        paddingHorizontal: 16,
+        padding: 16,
       },
       headerText: {
         color: theme.text.light,
@@ -125,14 +91,12 @@ const HomeScreen = ({navigation}) => {
         marginTop: 16,
       },
       headerLoader: {
-        padding: 16,
         height: 100,
         justifyContent: 'center',
         alignItems: 'center',
       },
       headerInfoItem: {
         flex: 1,
-        padding: 16,
         borderWidth: 1,
         borderColor: '#fff',
         borderRadius: 4,
@@ -167,7 +131,7 @@ const HomeScreen = ({navigation}) => {
           </Typography>
 
           <View>
-            {loading ? (
+            {isLoading ? (
               <View style={styles.headerLoader}>
                 <ActivityIndicator size="large" color={theme.text.light} />
               </View>
@@ -179,7 +143,7 @@ const HomeScreen = ({navigation}) => {
                     Total Cost
                   </Typography>
                   <Typography style={styles.headerInfoText}>
-                    R {total}
+                    R {totalCost}
                   </Typography>
                 </View>
 
@@ -189,7 +153,7 @@ const HomeScreen = ({navigation}) => {
                     Km per Liter
                   </Typography>
                   <Typography style={styles.headerInfoText}>
-                    {liters} km/l
+                    {kmPerLiter} km/l
                   </Typography>
                 </View>
               </View>

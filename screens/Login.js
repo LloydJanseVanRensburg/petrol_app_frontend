@@ -1,13 +1,20 @@
-import {Alert, StyleSheet, View} from 'react-native';
-import React from 'react';
+import {StyleSheet, View} from 'react-native';
+import React, {useMemo, useRef} from 'react';
 import {useMutation} from 'react-query';
-import {Button, Input, Typography} from 'channels-components/components';
+import {Button, Typography} from 'channels-components/components';
 import {useFormik} from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import {API_URL} from '../config/config';
+import FormInputGroup from '../components/FormInputGroup';
+import {useThemeProvider} from 'channels-components/apis';
 
 const Login = ({navigation}) => {
+  const theme = useThemeProvider();
+
+  const emailRef = useRef();
+  const passwordRef = useRef();
+
   const formik = useFormik({
     initialValues: {
       email: '',
@@ -25,68 +32,114 @@ const Login = ({navigation}) => {
     onSubmit: onLogin,
   });
 
-  const mutation = useMutation(handleLogin);
-
-  function handleLogin(userInfo) {
-    return axios.post(`${API_URL}/auth/local`, userInfo);
-  }
-
   function onLogin(values) {
     const userInfo = {
       identifier: values.email,
       password: values.password,
     };
 
-    console.log(userInfo);
+    mutation.mutate(userInfo);
+  }
 
-    mutation.mutate(userInfo, {
-      onSettled: () => {
-        formik.setSubmitting(false);
+  const mutation = useMutation(handleLogin, {
+    onSettled: () => {
+      formik.setSubmitting(false);
+    },
+    onError: () => {
+      formik.setErrors({
+        form: 'Invalid email or password',
+      });
+      emailRef.current.focus();
+      setTimeout(() => {
+        formik.setErrors({});
+      }, 5000);
+    },
+    onSuccess: () => {
+      navigation.reset({index: 0, routes: [{name: 'HomeDrawerScreen'}]});
+    },
+  });
+
+  function handleLogin(userInfo) {
+    return axios.post(`${API_URL}/auth/local`, userInfo);
+  }
+
+  const styles = useMemo(() => {
+    return StyleSheet.create({
+      root: {
+        flex: 1,
+        justifyContent: 'center',
+        backgroundColor: '#fff',
+        padding: 16,
       },
-      onError: (error, _variables, _context) => {
-        console.log(error);
+      heading: {
+        textAlign: 'center',
+        fontWeight: 'bold',
       },
-      onSuccess: () => {
-        navigation.reset({index: 0, routes: [{name: 'HomeScreen'}]});
+      button: {
+        borderRadius: 4,
+      },
+      spacing: {
+        marginVertical: 16,
+        width: '100%',
+      },
+      error_container: {
+        borderWidth: 2,
+        borderColor: theme.colors.error,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 8,
+      },
+      error_message: {
+        color: theme.colors.error,
       },
     });
-  }
+  }, [theme]);
 
   return (
     <View style={styles.root}>
       <View style={styles.spacing}>
         <Typography variant="h1" style={styles.heading}>
-          Let's Go
+          Login
         </Typography>
       </View>
 
-      <View style={styles.spacing}>
-        <Typography variant="body1">Email</Typography>
+      {formik.errors.form && (
+        <View style={[styles.spacing, styles.error_container]}>
+          <Typography variant="body2" style={styles.error_message}>
+            {formik.errors.form}
+          </Typography>
+        </View>
+      )}
 
-        <Input
+      <View style={styles.spacing}>
+        <FormInputGroup
+          ref={emailRef}
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current.focus()}
+          blurOnSubmit={false}
+          label="Email"
+          isTouched={formik.touched.email}
+          error={formik.errors.email}
           value={formik.values.email}
           onChangeText={formik.handleChange('email')}
           onBlur={formik.handleBlur('email')}
+          autoComplete="off"
         />
-
-        {formik.touched.email && formik.errors.email && (
-          <Typography variant="body2">{formik.errors.email}</Typography>
-        )}
       </View>
 
       <View style={styles.spacing}>
-        <Typography variant="body1">Password</Typography>
-
-        <Input
+        <FormInputGroup
+          ref={passwordRef}
+          returnKeyType="done"
+          label="Password"
+          isTouched={formik.touched.password}
+          error={formik.errors.password}
           value={formik.values.password}
           onChangeText={formik.handleChange('password')}
           onBlur={formik.handleBlur('password')}
+          onSubmitEditing={() => formik.isValid && formik.handleSubmit()}
           secureTextEntry={true}
         />
-
-        {formik.touched.password && formik.errors.password && (
-          <Typography variant="body2">{formik.errors.password}</Typography>
-        )}
       </View>
 
       <View style={styles.spacing}>
@@ -107,23 +160,3 @@ const Login = ({navigation}) => {
 };
 
 export default Login;
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-  },
-  heading: {
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  button: {
-    borderRadius: 4,
-  },
-  spacing: {
-    marginVertical: 16,
-    width: '100%',
-  },
-});

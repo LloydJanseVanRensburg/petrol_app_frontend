@@ -1,13 +1,19 @@
 import {StyleSheet, Pressable} from 'react-native';
-import React, {useContext} from 'react';
+import React from 'react';
 import {Typography, Paper, Button} from 'channels-components/components';
-import {EntriesContext} from '../../context/entries/EntriesProvider';
+import {useMutation} from 'react-query';
+import axios from 'axios';
+import {API_URL} from '../../config/config';
+
+const deleteEntry = id => {
+  return axios.delete(`${API_URL}/entries/${id}`);
+};
 
 const EntryCard = ({id, data}) => {
-  const {deleteEntry} = useContext(EntriesContext);
+  const mutation = useMutation(deleteEntry);
 
-  const handleEntryDelete = async () => {
-    deleteEntry(id);
+  const handleEntryDelete = () => {
+    mutation.mutate(id);
   };
 
   return (

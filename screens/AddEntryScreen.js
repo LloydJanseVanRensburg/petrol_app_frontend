@@ -1,22 +1,14 @@
 import {ScrollView, StyleSheet, View} from 'react-native';
-import React, {useState, useRef, useContext, useEffect} from 'react';
-import {Button, Input, Typography} from 'channels-components/components';
+import React, {useEffect, useRef, useState} from 'react';
+import {Button} from 'channels-components/components';
 import {API_URL} from '../config/config';
-import {EntriesContext} from '../context/entries/EntriesProvider';
+import FormInputGroup from '../components/FormInputGroup';
+import {useFormik} from 'formik';
+import * as Yup from 'yup';
+import {useMutation} from 'react-query';
+import axios from 'axios';
 
 const AddEntryScreen = ({navigation, route}) => {
-  // Global Entries
-  const {setEntries} = useContext(EntriesContext);
-
-  // Form State
-  const [amount, setAmount] = useState();
-  const [liters, setLiters] = useState();
-  const [odo, setOdo] = useState();
-  const [tripDistance, setTripDistance] = useState();
-  const [location, setLocation] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [receipt, setReceipt] = useState(null);
-
   // Form Input Refs
   const input1Ref = useRef();
   const input2Ref = useRef();
@@ -24,155 +16,157 @@ const AddEntryScreen = ({navigation, route}) => {
   const input4Ref = useRef();
   const input5Ref = useRef();
 
-  const submitEntry = async () => {
-    try {
-      // Validate All Fields for correctness
-      if (
-        !amount ||
-        !liters ||
-        !odo ||
-        !tripDistance ||
-        !location ||
-        !receipt
-      ) {
-        console.error('Invalid form');
-        return;
-      }
+  const [receipt, setReceipt] = useState(null);
 
-      setLoading(true);
+  const formik = useFormik({
+    initialValues: {
+      amount: '',
+      liters: '',
+      odo: '',
+      distance: '',
+      location: '',
+    },
+    validationSchema: Yup.object({
+      amount: Yup.string().required('Required'),
+      liters: Yup.string().required('Required'),
+      odo: Yup.string().required('Required'),
+      distance: Yup.string().required('Required'),
+      location: Yup.string().required('Required'),
+    }),
+    onSubmit: onAddEntry,
+  });
 
-      const formData = new FormData();
+  function onAddEntry(values) {
+    mutation.mutate({
+      amount: values.amount,
+      liters: values.liters,
+      odo: values.odo,
+      location: values.location,
+      distance: values.distance,
+    });
+  }
 
-      const data = {
-        amount,
-        liters,
-        odo,
-        location,
-        distance: tripDistance,
-      };
-
-      formData.append('data', JSON.stringify(data));
-      formData.append('files.receipt', {
-        uri: receipt.uri,
-        name: `RECEIPT-${Date.now()}`,
-        type: 'images/jpg',
+  const mutation = useMutation(handleAddEntry, {
+    onSettled: () => {
+      formik.setSubmitting(false);
+    },
+    onSuccess: () => {
+      formik.resetForm();
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'HomeDrawerScreen'}, {name: 'AllEntriesScreen'}],
       });
+    },
+    onError: error => {
+      console.log(error);
+    },
+  });
 
-      const entryRes = await fetch(`${API_URL}/entries`, {
-        method: 'POST',
-        body: formData,
-      });
+  function handleAddEntry(entry) {
+    const data = {
+      ...entry,
+    };
 
-      const entryData = await entryRes.json();
+    const formData = {
+      data,
+      files: {
+        receipt: {
+          uri: receipt.uri,
+          name: `RECEIPT-${Date.now()}`,
+          type: 'images/jpg',
+        },
+      },
+    };
 
-      if (!entryRes.ok) {
-        console.error('Something went wrong');
-        console.error(entryData);
-        setLoading(false);
-        return;
-      }
-
-      // Would have to connect to the context global state to add item to list
-      setEntries();
-
-      setLoading(false);
-      setAmount(null);
-      setLiters(null);
-      setOdo(null);
-      setTripDistance(null);
-      setReceipt(null);
-      setLocation('');
-    } catch (err) {
-      console.log(err);
-      setLoading(false);
-    }
-  };
-
-  const isDisabledButton = () => {
-    if (
-      !amount ||
-      !liters ||
-      !odo ||
-      !tripDistance ||
-      !location ||
-      loading ||
-      !receipt
-    ) {
-      return true;
-    }
-  };
-
-  const handleTakePicture = () => {
-    navigation.navigate('TakePictureScreen');
-  };
+    return axios.post(`${API_URL}/entries`, formData);
+  }
 
   useEffect(() => {
-    if (route.params && route.params.picture) {
+    if (route.params?.picture) {
       setReceipt(route.params.picture);
     }
   }, [route]);
 
+  function handleTakePicture() {
+    navigation.navigate('TakePictureScreen');
+  }
+
   return (
     <ScrollView style={styles.root}>
       <View style={styles.spacing}>
-        <Typography style={styles.label}>Amount (R)</Typography>
-        <Input
-          keyboardType="number-pad"
-          returnKeyType="next"
-          value={amount}
-          onChangeText={setAmount}
-          blurOnSubmit={false}
+        <FormInputGroup
+          label="Amount (R)"
+          isTouched={formik.touched.amount}
+          error={formik.errors.amount}
           ref={input1Ref}
+          blurOnSubmit={false}
           onSubmitEditing={() => input2Ref.current.focus()}
+          value={formik.values.amount}
+          onChangeText={formik.handleChange('amount')}
+          onBlur={formik.handleBlur('amount')}
+          keyboardType="number-pad"
+          returnKeyType="next"
         />
       </View>
 
       <View style={styles.spacing}>
-        <Typography style={styles.label}>Liters (R)</Typography>
-        <Input
-          keyboardType="number-pad"
-          returnKeyType="next"
-          value={liters}
-          onChangeText={setLiters}
-          blurOnSubmit={false}
+        <FormInputGroup
+          label="Liters"
+          isTouched={formik.touched.liters}
+          error={formik.errors.liters}
           ref={input2Ref}
+          blurOnSubmit={false}
           onSubmitEditing={() => input3Ref.current.focus()}
+          value={formik.values.liters}
+          onChangeText={formik.handleChange('liters')}
+          onBlur={formik.handleBlur('liters')}
+          keyboardType="number-pad"
+          returnKeyType="next"
         />
       </View>
 
       <View style={styles.spacing}>
-        <Typography style={styles.label}>ODO (KM)</Typography>
-        <Input
-          keyboardType="number-pad"
-          value={odo}
-          onChangeText={setOdo}
-          returnKeyType="next"
-          blurOnSubmit={false}
+        <FormInputGroup
+          label="ODO (KM)"
+          isTouched={formik.touched.odo}
+          error={formik.errors.odo}
           ref={input3Ref}
+          blurOnSubmit={false}
           onSubmitEditing={() => input4Ref.current.focus()}
-        />
-      </View>
-
-      <View style={styles.spacing}>
-        <Typography style={styles.label}>Trip Distance (KM)</Typography>
-        <Input
+          value={formik.values.odo}
+          onChangeText={formik.handleChange('odo')}
+          onBlur={formik.handleBlur('odo')}
           keyboardType="number-pad"
           returnKeyType="next"
-          value={tripDistance}
-          onChangeText={setTripDistance}
-          blurOnSubmit={false}
-          ref={input4Ref}
-          onSubmitEditing={() => input5Ref.current.focus()}
         />
       </View>
 
       <View style={styles.spacing}>
-        <Typography style={styles.label}>Location</Typography>
-        <Input
-          value={location}
-          onChangeText={setLocation}
-          returnKeyType="done"
+        <FormInputGroup
+          label="Trip Distance (KM)"
+          isTouched={formik.touched.distance}
+          error={formik.errors.distance}
+          ref={input4Ref}
+          blurOnSubmit={false}
+          onSubmitEditing={() => input5Ref.current.focus()}
+          value={formik.values.distance}
+          onChangeText={formik.handleChange('distance')}
+          onBlur={formik.handleBlur('distance')}
+          keyboardType="number-pad"
+          returnKeyType="next"
+        />
+      </View>
+
+      <View style={styles.spacing}>
+        <FormInputGroup
+          label="Location"
+          isTouched={formik.touched.location}
+          error={formik.errors.location}
           ref={input5Ref}
+          value={formik.values.location}
+          onChangeText={formik.handleChange('location')}
+          onBlur={formik.handleBlur('location')}
+          returnKeyType="done"
         />
       </View>
 
@@ -188,9 +182,14 @@ const AddEntryScreen = ({navigation, route}) => {
         <Button
           title="Add"
           style={styles.button}
-          onPress={submitEntry}
-          disabled={isDisabledButton()}
-          loading={loading}
+          onPress={formik.handleSubmit}
+          disabled={
+            !formik.isValid ||
+            formik.isSubmitting ||
+            (!formik.dirty && formik.isValid) ||
+            receipt === null
+          }
+          loading={formik.isSubmitting}
         />
       </View>
     </ScrollView>

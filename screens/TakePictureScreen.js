@@ -4,7 +4,7 @@ import {RNCamera} from 'react-native-camera';
 import {Button} from 'channels-components/components';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-const TakePictureScreen = ({navigation}) => {
+const TakePictureScreen = ({navigation, route}) => {
   const [loading, setLoading] = useState(false);
   const [picture, setPicture] = useState(null);
   const camera = useRef();
@@ -22,7 +22,7 @@ const TakePictureScreen = ({navigation}) => {
   };
 
   const acceptPicture = () => {
-    navigation.navigate('AddEntryScreen', {picture: picture});
+    navigation.navigate('AddEntryScreen', {picture});
   };
 
   const rejectPicture = () => {
