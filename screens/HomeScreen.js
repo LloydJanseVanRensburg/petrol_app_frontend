@@ -1,23 +1,9 @@
-import {
-  StyleSheet,
-  View,
-  Dimensions,
-  FlatList,
-  ActivityIndicator,
-  ActivityIndicatorComponent,
-} from 'react-native';
-import React, {useMemo, useState} from 'react';
+import {StyleSheet, View, Dimensions, FlatList} from 'react-native';
+import React, {useMemo} from 'react';
 import {Typography} from 'channels-components/components';
 import MenuCard from '../components/MenuCard';
 import {useThemeProvider} from '../channels-components/apis';
-import qs from 'qs';
-import {API_URL} from '../config/config';
-import {useQuery} from 'react-query';
-import axios from 'axios';
-
-const fetchAllEntries = () => {
-  return axios.get(`${API_URL}/entries`);
-};
+import HeaderStatsInfo from '../components/HeaderStatsInfo';
 
 const HomeScreen = ({navigation}) => {
   const MENU_ITEMS = [
@@ -37,33 +23,11 @@ const HomeScreen = ({navigation}) => {
     },
   ];
 
-  const [totalCost, setTotalCost] = useState(0);
-  const [kmPerLiter, setKmPerLiter] = useState(0);
-
   const theme = useThemeProvider();
 
   const handleRenderMenuItem = itemData => {
     return <MenuCard data={itemData.item} />;
   };
-
-  const {isLoading} = useQuery('all-entries', fetchAllEntries, {
-    onSuccess: res => {
-      const total = res.data.data.reduce(
-        (acc, cur) => cur.attributes.amount + acc,
-        0,
-      );
-
-      const kmPerLiters =
-        res.data.data.reduce(
-          (acc, cur) => cur.attributes.kilos_per_liter + acc,
-          0,
-        ) / res.data.data.length;
-
-      setTotalCost(total);
-      setKmPerLiter(kmPerLiters);
-    },
-    refetchOnWindowFocus: true,
-  });
 
   const styles = useMemo(() => {
     const windowWidth = Dimensions.get('window').height;
@@ -130,35 +94,7 @@ const HomeScreen = ({navigation}) => {
             Lloyd Janse van Rensburg
           </Typography>
 
-          <View>
-            {isLoading ? (
-              <View style={styles.headerLoader}>
-                <ActivityIndicator size="large" color={theme.text.light} />
-              </View>
-            ) : (
-              <View style={styles.headerInfo}>
-                <View
-                  style={[styles.headerInfoItem, styles.headerInfoItemLeft]}>
-                  <Typography style={styles.headerInfoText}>
-                    Total Cost
-                  </Typography>
-                  <Typography style={styles.headerInfoText}>
-                    R {totalCost}
-                  </Typography>
-                </View>
-
-                <View
-                  style={[styles.headerInfoItem, styles.headerInfoItemRight]}>
-                  <Typography style={styles.headerInfoText}>
-                    Km per Liter
-                  </Typography>
-                  <Typography style={styles.headerInfoText}>
-                    {kmPerLiter} km/l
-                  </Typography>
-                </View>
-              </View>
-            )}
-          </View>
+          <HeaderStatsInfo />
         </View>
       </View>
 

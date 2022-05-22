@@ -3,19 +3,15 @@ import {StyleSheet, FlatList, View} from 'react-native';
 import {Typography} from 'channels-components/components';
 import EntryCard from '../components/EntryCard';
 import LoadingScreen from '../components/LoadingScreen';
-import {useQuery} from 'react-query';
-import axios from 'axios';
-import {API_URL} from '../config/config';
+import useEntries from '../hooks/useEntries';
 
 const AllEntriesScreen = () => {
   const {
-    data: {
-      data: {data},
-    },
+    data: {data},
     isLoading,
     isError,
     error,
-  } = useQuery('all-entries', () => axios.get(`${API_URL}/entries`));
+  } = useEntries();
 
   const handleRenderListItem = itemData => {
     return <EntryCard id={itemData.item.id} data={itemData.item.attributes} />;
